@@ -7,7 +7,7 @@ using Xamarin.Forms;
 
 namespace CustomLayouts.Controls
 {
-	public class CarouselLayout : ScrollView
+	class CarouselLayout : ScrollView
 	{
 		public enum IndicatorStyleEnum
 		{
@@ -55,7 +55,11 @@ namespace CustomLayouts.Controls
 			if (_layingOutChildren) return;
 
 			_layingOutChildren = true;
-			foreach (var child in Children) child.WidthRequest = width;
+			foreach (var child in Children)
+			{
+				child.WidthRequest = width;
+				child.HeightRequest = height;
+			}
 			_layingOutChildren = false;
 		}
 

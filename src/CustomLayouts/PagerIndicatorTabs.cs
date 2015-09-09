@@ -19,7 +19,7 @@ namespace CustomLayouts
 			HorizontalOptions = LayoutOptions.CenterAndExpand;
 			VerticalOptions = LayoutOptions.Center;
 			DotColor = Color.Black;
-			Device.OnPlatform(iOS: () => BackgroundColor = Color.Gray);
+			Device.OnPlatform(iOS: () => BackgroundColor = Color.Gray, WinPhone: () => BackgroundColor = Color.Gray);
 
 			var assembly = typeof(PagerIndicatorTabs).GetTypeInfo().Assembly;
 			foreach (var res in assembly.GetManifestResourceNames())
@@ -50,6 +50,11 @@ namespace CustomLayouts
 					Android: () =>
 					{
 						tab.Children.Add(new Image { Source = "pin.png", HeightRequest = 25 });
+					},
+					WinPhone: () =>
+					{
+						tab.Children.Add(new Image { Source = "Assets/pin.png", HeightRequest = 25 });
+						tab.Children.Add(new Label { Text = "Tab " + (index + 1), FontSize = 11 });
 					}
 				);
 				var tgr = new TapGestureRecognizer();

@@ -15,6 +15,7 @@ namespace CustomLayouts
 		int dotCount = 1;
 		int _selectedIndex;
 
+		public Color DotOutline { get; set; }
 		public Color DotColor { get; set; }
 		public double DotSize { get; set; }
 
@@ -24,6 +25,7 @@ namespace CustomLayouts
 			VerticalOptions = LayoutOptions.Center;
 			Orientation = StackOrientation.Horizontal;
 			DotColor = Color.Black;
+			DotOutline = Color.White;
 		}
 
 		void CreateDot()
@@ -32,26 +34,27 @@ namespace CustomLayouts
 			var dot = new Button {
 				BorderRadius = Convert.ToInt32(DotSize/2),
 				HeightRequest = DotSize,
-				WidthRequest = DotSize,
-				BackgroundColor = DotColor
+				WidthRequest = DotSize * 4,
+				BackgroundColor = DotColor,
+				BorderColor = DotOutline
 			};
 			Children.Add(dot);
 		}
 
-		void CreateTabs()
-		{
-			foreach(var item in ItemsSource)
-			{
-				var tab = item as ITabProvider;
-				var image = new Image {
-					HeightRequest = 42,
-					WidthRequest = 42,
-					BackgroundColor = DotColor,
-					Source = tab.ImageSource,
-				};
-				Children.Add(image);
-			}
-		}
+		//void CreateTabs()
+		//{
+		//	foreach(var item in ItemsSource)
+		//	{
+		//		var tab = item as ITabProvider;
+		//		var image = new Image {
+		//			HeightRequest = 42,
+		//			WidthRequest = 42,
+		//			BackgroundColor = DotColor,
+		//			Source = tab.ImageSource,
+		//		};
+		//		Children.Add(image);
+		//	}
+		//}
 
 		public static BindableProperty ItemsSourceProperty =
 			BindableProperty.Create<PagerIndicatorDots, IList> (

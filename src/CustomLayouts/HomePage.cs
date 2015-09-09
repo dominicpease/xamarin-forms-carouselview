@@ -5,6 +5,7 @@ using CustomLayouts.ViewModels;
 using System.Collections;
 using System.Linq;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace CustomLayouts
 {
@@ -17,6 +18,7 @@ namespace CustomLayouts
 		CarouselLayout.IndicatorStyleEnum _indicatorStyle;
 
 		SwitcherPageViewModel viewModel;
+		CarouselLayout pagesCarousel;
 
 		public HomePage(CarouselLayout.IndicatorStyleEnum indicatorStyle)
 		{
@@ -33,7 +35,7 @@ namespace CustomLayouts
 				VerticalOptions = LayoutOptions.FillAndExpand
 			};
 
-			var pagesCarousel = CreatePagesCarousel();
+			pagesCarousel = CreatePagesCarousel();
 			var dots = CreatePagerIndicatorContainer();
 			_tabs = CreateTabs();
 
@@ -44,15 +46,15 @@ namespace CustomLayouts
 						Constraint.RelativeToParent ((parent) => { return parent.X; }),
 						Constraint.RelativeToParent ((parent) => { return parent.Y; }),
 						Constraint.RelativeToParent ((parent) => { return parent.Width; }),
-						Constraint.RelativeToParent ((parent) => { return parent.Height/2; })
+						Constraint.RelativeToParent ((parent) => { return parent.Height; })
 					);
 
 					relativeLayout.Children.Add (dots, 
 						Constraint.Constant (0),
 						Constraint.RelativeToView (pagesCarousel, 
-							(parent,sibling) => { return sibling.Height - 18; }),
+							(parent,sibling) => { return sibling.Height - 38; }),
 						Constraint.RelativeToParent (parent => parent.Width),
-						Constraint.Constant (18)
+						Constraint.Constant (38)
 					);
 					break;
 				case CarouselLayout.IndicatorStyleEnum.Tabs:
@@ -100,14 +102,14 @@ namespace CustomLayouts
 
 		View CreatePagerIndicatorContainer()
 		{
-			return new StackLayout {
+			return new Grid {
 				Children = { CreatePagerIndicators() }
 			};
 		}
 
 		View CreatePagerIndicators()
 		{
-			var pagerIndicator = new PagerIndicatorDots() { DotSize = 5, DotColor = Color.Black };
+			var pagerIndicator = new PagerIndicatorDots() { DotSize = 15, DotColor = Color.Black, HeightRequest = 50 };
 			pagerIndicator.SetBinding (PagerIndicatorDots.ItemsSourceProperty, "Pages");
 			pagerIndicator.SetBinding (PagerIndicatorDots.SelectedItemProperty, "CurrentPage");
 			return pagerIndicator;
@@ -124,21 +126,61 @@ namespace CustomLayouts
 		{
 			var pagerIndicator = new PagerIndicatorTabs() { HorizontalOptions = LayoutOptions.CenterAndExpand };
 			pagerIndicator.RowDefinitions.Add(new RowDefinition() { Height = 50 });
-			pagerIndicator.SetBinding(PagerIndicatorTabs.ColumnDefinitionsProperty, "Pages", BindingMode.Default, new SpacingConverter());
+#if WINDOWS_PHONE
+			// For some reason, the binding converter in the #else doesn't seem to get invoked, no matter which overload of SetBinding is used. It is constructed,
+			// but after it is passed to SetBinding the Convert() method is never called and an exception is thrown. So here's a replacement for the databinding
+			// logic on Windows Phone.
+
+			EventHandler action = (object sender, EventArgs e) =>
+			{
+				SwitcherPageViewModel vm = this.BindingContext as SwitcherPageViewModel;
+				SpacingConverter sc = new SpacingConverter();
+				pagerIndicator.ColumnDefinitions = (ColumnDefinitionCollection)sc.Convert(vm.Pages, typeof(ColumnDefinitionCollection), null, System.Globalization.CultureInfo.CurrentCulture);
+            };
+
+			this.BindingContextChanged += action;
+
+			action(null, EventArgs.Empty);
+
+			pagerIndicator.PropertyChanged += PagerIndicator_PropertyChanged;
+#else
+			pagerIndicator.SetBinding(PagerIndicatorTabs.ColumnDefinitionsProperty, new Binding("Pages", BindingMode.Default, new SpacingConverter(), null));
+#endif
 			pagerIndicator.SetBinding (PagerIndicatorTabs.ItemsSourceProperty, "Pages");
 			pagerIndicator.SetBinding (PagerIndicatorTabs.SelectedItemProperty, "CurrentPage");
 
 			return pagerIndicator;
 		}
+
+		bool setting = false;
+		private void PagerIndicator_PropertyChanged(object sender, System.ComponentModel.PropertyChangedEventArgs e)
+		{
+			PagerIndicatorTabs pagerIndicator = sender as PagerIndicatorTabs;
+			if (setting || e.PropertyName != nameof(pagerIndicator.SelectedItem) || !(pagerIndicator.SelectedItem is HomeViewModel))
+				return;
+
+			setting = true;
+			pagesCarousel.SelectedItem = ((HomeViewModel)pagerIndicator.SelectedItem);
+			setting = false;
+		}
 	}
 
 	public class SpacingConverter : IValueConverter
 	{
+		public SpacingConverter()
+		{
+		}
+
 		public object Convert(object value, Type targetType, object parameter, System.Globalization.CultureInfo culture)
 		{
+			Debug.WriteLine("Entered SpacingConverter.Convert");
 			var items = value as IEnumerable<HomeViewModel>;
 
 			var collection = new ColumnDefinitionCollection();
+
+			if (items == null)
+				return collection;
+
 			foreach(var item in items)
 			{
 				collection.Add(new ColumnDefinition() { Width = new GridLength(1, GridUnitType.Star) });
