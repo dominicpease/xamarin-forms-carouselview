@@ -7,7 +7,7 @@ using Xamarin.Forms;
 
 namespace CustomLayouts.Controls
 {
-	class CarouselLayout : ScrollView
+	public class CarouselLayout : ScrollView
 	{
 		public enum IndicatorStyleEnum
 		{
